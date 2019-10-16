@@ -53,13 +53,58 @@ class NotificationController extends AbstractController
     public function markAsSeenAction(int $notifiable, Notification $notification): JsonResponse
     {
         $manager = $this->get('vidoomy.notification');
-        $manager->markAsSeen(
-            $manager->getNotifiableInterface($manager->getNotifiableEntityById($notifiable)),
-            $manager->getNotification($notification),
-            true
-        );
+        $notifiableEntity = $manager->getNotifiableInterface($manager->getNotifiableEntityById($notifiable));
 
-        return new JsonResponse(true);
+        if ($notification->isOwnedBy($notifiableEntity)) {
+            $manager->markAsSeen(
+                $notifiableEntity,
+                $notification,
+                true
+            );
+
+            return new JsonResponse(["status" => "success"]);
+        }
+
+        return new JsonResponse(
+            ["status" => "error", "message" => "Unauthorized to perform action"],
+            Response::HTTP_UNAUTHORIZED
+        );
+    }
+
+    /**
+     * Delete a notification
+     *
+     * @Route("/{notifiable}/delete/{notification}", name="notification_delete", methods={"POST"})
+     * @param int           $notifiable
+     * @param Notification  $notification
+     *
+     * @return JsonResponse
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws \Doctrine\ORM\EntityNotFoundException
+     * @throws \LogicException
+     */
+    public function deleteAction(int $notifiable, Notification $notification): JsonResponse
+    {
+        $manager = $this->get('vidoomy.notification');
+        $notifiableEntity = $manager->getNotifiableInterface($manager->getNotifiableEntityById($notifiable));
+
+        if ($notification->isOwnedBy($notifiableEntity)) {
+            $manager->deleteNotification(
+                $notification,
+                true
+            );
+
+            return new JsonResponse(["status" => "success"]);
+
+        }
+
+        return new JsonResponse(
+            ["status" => "error", "message" => "Unauthorized to perform action"],
+            Response::HTTP_UNAUTHORIZED
+        );
     }
 
     /**
@@ -80,13 +125,22 @@ class NotificationController extends AbstractController
     public function markAsUnSeenAction(int $notifiable, Notification $notification): JsonResponse
     {
         $manager = $this->get('vidoomy.notification');
-        $manager->markAsUnseen(
-            $manager->getNotifiableInterface($manager->getNotifiableEntityById($notifiable)),
-            $manager->getNotification($notification),
-            true
-        );
+        $notifiableEntity = $manager->getNotifiableInterface($manager->getNotifiableEntityById($notifiable));
 
-        return new JsonResponse(true);
+        if ($notification->isOwnedBy($notifiableEntity)) {
+            $manager->markAsUnseen(
+                $notifiableEntity,
+                $notification,
+                true
+            );
+
+            return new JsonResponse(["status" => "success"]);
+        }
+
+        return new JsonResponse(
+            ["status" => "error", "message" => "Unauthorized to perform action"],
+            Response::HTTP_UNAUTHORIZED
+        );
     }
 
     /**
@@ -108,6 +162,6 @@ class NotificationController extends AbstractController
             true
         );
 
-        return new JsonResponse(true);
+        return new JsonResponse(["status" => "success"]);
     }
 }
