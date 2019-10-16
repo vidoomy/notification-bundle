@@ -66,6 +66,18 @@ interface NotificationInterface
     public function setLink(string $link): NotificationInterface;
 
     /**
+     * @return int Notification priority
+     */
+    public function getPriority():int;
+
+    /**
+     * @param int $priority Notification priority
+     *
+     * @return NotificationInterface
+     */
+    public function setPriority(int $priority): NotificationInterface;
+
+    /**
      * @return ArrayCollection|NotifiableNotification[]
      */
     public function getNotifiableNotifications();

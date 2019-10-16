@@ -18,7 +18,6 @@ use Vidoomy\NotificationBundle\Entity\Repository\NotificationRepository;
 use Vidoomy\NotificationBundle\Event\AbstractNotificationEvent;
 use Vidoomy\NotificationBundle\Event\AssignedNotificationEvent;
 use Vidoomy\NotificationBundle\Event\CreatedNotificationEvent;
-use Vidoomy\NotificationBundle\Event\DeletedModificationEvent;
 use Vidoomy\NotificationBundle\Event\DeletedNotificationEvent;
 use Vidoomy\NotificationBundle\Event\ModifiedNotificationEvent;
 use Vidoomy\NotificationBundle\Event\RemovedNotificationEvent;
@@ -27,6 +26,7 @@ use Vidoomy\NotificationBundle\Event\UnseenNotificationEvent;
 use Vidoomy\NotificationBundle\VidoomyNotificationEvents;
 use Vidoomy\NotificationBundle\NotifiableDiscovery;
 use Vidoomy\NotificationBundle\NotifiableInterface;
+use Vidoomy\NotificationBundle\Model\Notification as NotificationModel;
 
 /**
  * Class NotificationManager
@@ -364,18 +364,23 @@ class NotificationManager
 
     /**
      * @param string $subject
-     * @param string $message
-     * @param string $link
-     *
+     * @param string|null $message
+     * @param string|null $link
+     * @param int $priority
      * @return Notification
      */
-    public function createNotification(string $subject, string $message = null, string $link = null): Notification
-    {
+    public function createNotification(
+        string $subject,
+        string $message = null,
+        string $link = null,
+        int $priority = NotificationModel::NOTIFICATION_PRIORITY_LOW
+    ): Notification {
         $notification = new Notification();
         $notification
             ->setSubject($subject)
             ->setMessage($message)
-            ->setLink($link);
+            ->setLink($link)
+            ->setPriority($priority);
 
         $event = new CreatedNotificationEvent($notification);
         $this->dispatcher->dispatch($event);
@@ -661,6 +666,27 @@ class NotificationManager
         bool $flush = false
     ): NotificationInterface {
         $notification->setLink($link);
+        $this->flush($flush);
+
+        $event = new ModifiedNotificationEvent($notification);
+        $this->dispatcher->dispatch($event);
+
+        return $notification;
+    }
+
+    /**
+     * @param NotificationInterface $notification
+     * @param int       $priority
+     * @param bool         $flush
+     *
+     * @return NotificationInterface
+     */
+    public function setPriority(
+        NotificationInterface $notification,
+        int $priority,
+        bool $flush = false
+    ): NotificationInterface {
+        $notification->setPriority($priority);
         $this->flush($flush);
 
         $event = new ModifiedNotificationEvent($notification);
