@@ -55,7 +55,7 @@ class NotificationController extends AbstractController
         $manager = $this->get('vidoomy.notification');
         $manager->markAsSeen(
             $manager->getNotifiableInterface($manager->getNotifiableEntityById($notifiable)),
-            $manager->getNotification($notification),
+            $notification,
             true
         );
 
@@ -82,7 +82,7 @@ class NotificationController extends AbstractController
         $manager = $this->get('vidoomy.notification');
         $manager->markAsUnseen(
             $manager->getNotifiableInterface($manager->getNotifiableEntityById($notifiable)),
-            $manager->getNotification($notification),
+            $notification,
             true
         );
 
