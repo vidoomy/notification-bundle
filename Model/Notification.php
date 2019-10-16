@@ -2,6 +2,8 @@
 
 namespace Vidoomy\NotificationBundle\Model;
 
+use Carbon\Carbon;
+use Carbon\Translator;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Vidoomy\NotificationBundle\Entity\NotifiableNotification;
@@ -22,6 +24,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     const ENTITY_FIELD_SUBJECT = "subject";
     const ENTITY_FIELD_MESSAGE = "message";
     const ENTITY_FIELD_LINK = "link";
+    const ENTITY_FIELD_HUMAN_DATE = "humanDate";
 
     /**
      * @var integer $id
@@ -87,6 +90,18 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     }
 
     /**
+     * @param string $locale
+     * @return string
+     */
+    public function getHumanDate($locale = "en"): string
+    {
+        $translator = Translator::get($locale);
+        $date = Carbon::instance($this->date);
+
+        return $date->locale($locale)->diffForHumans();
+    }
+
+    /**
      * @param \DateTimeInterface $date
      * @return $this
      */
@@ -109,7 +124,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
      * @param string $subject
      * @return $this
      */
-    public function setSubject(string $subject): NotificationInterface
+    public function setSubject(?string $subject): NotificationInterface
     {
         $this->subject = $subject;
 
@@ -128,7 +143,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
      * @param string $message
      * @return $this
      */
-    public function setMessage(string $message): NotificationInterface
+    public function setMessage(?string $message): NotificationInterface
     {
         $this->message = $message;
 
@@ -147,7 +162,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
      * @param string $link
      * @return $this
      */
-    public function setLink(string $link): NotificationInterface
+    public function setLink(?string $link): NotificationInterface
     {
         $this->link = $link;
 
@@ -206,11 +221,12 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     public function jsonSerialize(): array
     {
         return [
-            self::ENTITY_FIELD_ID      => $this->getId(),
-            self::ENTITY_FIELD_DATE    => $this->getDate()->format(\DateTime::ISO8601),
-            self::ENTITY_FIELD_SUBJECT => $this->getSubject(),
-            self::ENTITY_FIELD_MESSAGE => $this->getMessage(),
-            self::ENTITY_FIELD_LINK    => $this->getLink()
+            self::ENTITY_FIELD_ID           => $this->getId(),
+            self::ENTITY_FIELD_DATE         => $this->getDate()->format(\DateTime::ISO8601),
+            self::ENTITY_FIELD_HUMAN_DATE   => $this->getHumanDate(),
+            self::ENTITY_FIELD_SUBJECT      => $this->getSubject(),
+            self::ENTITY_FIELD_MESSAGE      => $this->getMessage(),
+            self::ENTITY_FIELD_LINK         => $this->getLink()
         ];
     }
 }
