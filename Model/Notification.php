@@ -5,6 +5,7 @@ namespace Vidoomy\NotificationBundle\Model;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Vidoomy\NotificationBundle\Entity\NotifiableNotification;
+use Vidoomy\NotificationBundle\Entity\NotificationInterface;
 
 /**
  * Class Notification
@@ -13,7 +14,7 @@ use Vidoomy\NotificationBundle\Entity\NotifiableNotification;
  * @ORM\MappedSuperclass(repositoryClass="Vidoomy\NotificationBundle\Entity\Repository\NotificationRepository")
  * @package Vidoomy\NotificationBundle\Model
  */
-abstract class Notification implements \JsonSerializable
+abstract class Notification implements \JsonSerializable, NotificationInterface
 {
 
     const ENTITY_FIELD_ID = "id";
@@ -32,7 +33,7 @@ abstract class Notification implements \JsonSerializable
     protected $id;
 
     /**
-     * @var \DateTime
+     * @var \DateTimeInterface
      * @ORM\Column(type="datetime")
      */
     protected $date;
@@ -89,7 +90,7 @@ abstract class Notification implements \JsonSerializable
      * @param \DateTimeInterface $date
      * @return $this
      */
-    public function setDate(\DateTimeInterface $date): self
+    public function setDate(\DateTimeInterface $date): NotificationInterface
     {
         $this->date = $date;
 
@@ -108,7 +109,7 @@ abstract class Notification implements \JsonSerializable
      * @param string $subject
      * @return $this
      */
-    public function setSubject(string $subject): self
+    public function setSubject(string $subject): NotificationInterface
     {
         $this->subject = $subject;
 
@@ -127,7 +128,7 @@ abstract class Notification implements \JsonSerializable
      * @param string $message
      * @return $this
      */
-    public function setMessage(string $message): self
+    public function setMessage(string $message): NotificationInterface
     {
         $this->message = $message;
 
@@ -146,7 +147,7 @@ abstract class Notification implements \JsonSerializable
      * @param string $link
      * @return $this
      */
-    public function setLink(string $link): self
+    public function setLink(string $link): NotificationInterface
     {
         $this->link = $link;
 
@@ -166,7 +167,7 @@ abstract class Notification implements \JsonSerializable
      *
      * @return $this
      */
-    public function addNotifiableNotification(NotifiableNotification $notifiableNotification): self
+    public function addNotifiableNotification(NotifiableNotification $notifiableNotification): NotificationInterface
     {
         if (!$this->notifiableNotifications->contains($notifiableNotification)) {
             $this->notifiableNotifications[] = $notifiableNotification;
@@ -181,7 +182,7 @@ abstract class Notification implements \JsonSerializable
      *
      * @return $this
      */
-    public function removeNotifiableNotification(NotifiableNotification $notifiableNotification): self
+    public function removeNotifiableNotification(NotifiableNotification $notifiableNotification): NotificationInterface
     {
         if ($this->notifiableNotifications->contains($notifiableNotification)) {
             $this->notifiableNotifications->removeElement($notifiableNotification);
