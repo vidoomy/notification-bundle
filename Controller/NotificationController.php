@@ -93,7 +93,6 @@ class NotificationController extends AbstractController
      * Set all Notifications for a User as seen
      *
      * @Route("/{notifiable}/markAllAsSeen", name="notification_mark_all_as_seen", methods={"POST"})
-     * @Method("POST")
      * @param int $notifiable
      *
      * @return JsonResponse
