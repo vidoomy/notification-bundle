@@ -243,7 +243,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         foreach ($this->getNotifiableNotifications() as $notifiableNotification) {
             if (
                 $notifiableNotification->getNotification()->getId() === $this->getId() &&
-                $notifiableNotification->getNotifiableEntity() === $notifiable
+                $notifiableNotification->getNotifiableEntity()->getId() === $notifiable->getId()
             ) {
                 return true;
             }
