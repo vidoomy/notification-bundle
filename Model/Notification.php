@@ -6,6 +6,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Vidoomy\NotificationBundle\Entity\NotifiableNotification;
 use Vidoomy\NotificationBundle\Entity\NotificationInterface;
+use Vidoomy\NotificationBundle\NotifiableInterface;
 
 /**
  * Class Notification
@@ -190,6 +191,20 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         }
 
         return $this;
+    }
+
+    public function isOwnedBy(NotifiableInterface $notifiable): bool
+    {
+        foreach ($this->getNotifiableNotifications() as $notifiableNotification) {
+            if (
+                $notifiableNotification->getNotification()->getId() === $this->getId() &&
+                $notifiableNotification->getNotifiableEntity() === $notifiable
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

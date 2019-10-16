@@ -212,6 +212,19 @@ class NotificationExtension extends AbstractExtension
                     )
                 );
                 break;
+            case 'notification_delete':
+                if (!$notification) {
+                    throw new \InvalidArgumentException('You must provide a Notification Entity');
+                }
+
+                return $this->router->generate(
+                    'notification_delete',
+                    array(
+                        'notifiable' => $notifiableId,
+                        'notification' => $notification->getId()
+                    )
+                );
+                break;
             case 'notification_mark_all_as_seen':
                 return $this->router->generate('notification_mark_all_as_seen', array('notifiable' => $notifiableId));
                 break;
