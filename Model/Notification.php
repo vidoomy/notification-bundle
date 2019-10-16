@@ -1,0 +1,215 @@
+<?php
+
+namespace Vidoomy\NotificationBundle\Model;
+
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use Vidoomy\NotificationBundle\Entity\NotifiableNotification;
+
+/**
+ * Class Notification
+ * Notifications defined in your app must implement this class
+ *
+ * @ORM\MappedSuperclass(repositoryClass="Vidoomy\NotificationBundle\Entity\Repository\NotificationRepository")
+ * @package Vidoomy\NotificationBundle\Model
+ */
+abstract class Notification implements \JsonSerializable
+{
+
+    const ENTITY_FIELD_ID = "id";
+    const ENTITY_FIELD_DATE = "date";
+    const ENTITY_FIELD_SUBJECT = "subject";
+    const ENTITY_FIELD_MESSAGE = "message";
+    const ENTITY_FIELD_LINK = "link";
+
+    /**
+     * @var integer $id
+     *
+     * @ORM\Column(type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue
+     */
+    protected $id;
+
+    /**
+     * @var \DateTime
+     * @ORM\Column(type="datetime")
+     */
+    protected $date;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", length=4000)
+     */
+    protected $subject;
+    /**
+     * @var string
+     * @ORM\Column(type="string", length=4000, nullable=true)
+     */
+    protected $message;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", length=4000, nullable=true)
+     */
+    protected $link;
+
+    /**
+     * @var NotifiableNotification[]|ArrayCollection
+     * @ORM\OneToMany(targetEntity="Vidoomy\NotificationBundle\Entity\NotifiableNotification", mappedBy="notification", cascade={"persist"})
+     */
+    protected $notifiableNotifications;
+
+    /**
+     * AbstractNotification constructor.
+     */
+    public function __construct()
+    {
+        $this->date = new \DateTime();
+        $this->notifiableNotifications = new ArrayCollection();
+    }
+
+    /**
+     * @return int Notification Id
+     */
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return \DateTimeInterface
+     */
+    public function getDate(): \DateTimeInterface
+    {
+        return $this->date;
+    }
+
+    /**
+     * @param \DateTimeInterface $date
+     * @return $this
+     */
+    public function setDate(\DateTimeInterface $date): self
+    {
+        $this->date = $date;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSubject(): string
+    {
+        return $this->subject;
+    }
+
+    /**
+     * @param string $subject
+     * @return $this
+     */
+    public function setSubject(string $subject): self
+    {
+        $this->subject = $subject;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMessage(): string
+    {
+        return $this->message;
+    }
+
+    /**
+     * @param string $message
+     * @return $this
+     */
+    public function setMessage(string $message): self
+    {
+        $this->message = $message;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLink(): string
+    {
+        return $this->link;
+    }
+
+    /**
+     * @param string $link
+     * @return $this
+     */
+    public function setLink(string $link): self
+    {
+        $this->link = $link;
+
+        return $this;
+    }
+
+    /**
+     * @return ArrayCollection|NotifiableNotification[]
+     */
+    public function getNotifiableNotifications()
+    {
+        return $this->notifiableNotifications;
+    }
+
+    /**
+     * @param NotifiableNotification $notifiableNotification
+     *
+     * @return $this
+     */
+    public function addNotifiableNotification(NotifiableNotification $notifiableNotification): self
+    {
+        if (!$this->notifiableNotifications->contains($notifiableNotification)) {
+            $this->notifiableNotifications[] = $notifiableNotification;
+            $notifiableNotification->setNotification($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param NotifiableNotification $notifiableNotification
+     *
+     * @return $this
+     */
+    public function removeNotifiableNotification(NotifiableNotification $notifiableNotification): self
+    {
+        if ($this->notifiableNotifications->contains($notifiableNotification)) {
+            $this->notifiableNotifications->removeElement($notifiableNotification);
+            $notifiableNotification->setNotification(null);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function __toString(): string
+    {
+        return $this->getSubject() . ' - ' . $this->getMessage();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            self::ENTITY_FIELD_ID      => $this->getId(),
+            self::ENTITY_FIELD_DATE    => $this->getDate()->format(\DateTime::ISO8601),
+            self::ENTITY_FIELD_SUBJECT => $this->getSubject(),
+            self::ENTITY_FIELD_MESSAGE => $this->getMessage(),
+            self::ENTITY_FIELD_LINK    => $this->getLink()
+        ];
+    }
+}

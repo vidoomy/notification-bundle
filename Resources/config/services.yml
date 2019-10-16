@@ -1,0 +1,19 @@
+services:
+
+    vidoomy.notification:
+        class: Vidoomy\NotificationBundle\Manager\NotificationManager
+        arguments: ["@service_container", '@vidoomy.notifiable_discovery']
+        public: true
+
+    vidoomy.notifiable_discovery:
+        class: Vidoomy\NotificationBundle\NotifiableDiscovery
+        arguments: [ '@doctrine.orm.entity_manager', '@annotation_reader']
+        public: false
+
+
+    vidoomy.twig_extension:
+            class: Vidoomy\NotificationBundle\Twig\NotificationExtension
+            arguments: ['@vidoomy.notification', '@security.token_storage', '@twig', '@router']
+            public: false
+            tags:
+                - { name: twig.extension }

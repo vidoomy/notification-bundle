@@ -1,0 +1,3 @@
+notifications:
+    resource: "@VidoomyNotificationBundle/Controller/"
+    type: annotation
