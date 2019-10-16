@@ -26,6 +26,10 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     const ENTITY_FIELD_LINK = "link";
     const ENTITY_FIELD_HUMAN_DATE = "humanDate";
 
+    const NOTIFICATION_PRIORITY_HIGH = 1;
+    const NOTIFICATION_PRIORITY_MEDIUM = 2;
+    const NOTIFICATION_PRIORITY_LOW = 3;
+
     /**
      * @var integer $id
      *
@@ -57,6 +61,12 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
      * @ORM\Column(type="string", length=4000, nullable=true)
      */
     protected $link;
+
+    /**
+     * @var int
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    protected $priority = self::NOTIFICATION_PRIORITY_LOW;
 
     /**
      * @var NotifiableNotification[]|ArrayCollection
@@ -168,6 +178,26 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
 
         return $this;
     }
+
+    /**
+     * @return int
+     */
+    public function getPriority(): int
+    {
+        return $this->priority;
+    }
+
+    /**
+     * @param int $priority
+     * @return $this
+     */
+    public function setPriority(int $priority): NotificationInterface
+    {
+        $this->priority = $priority;
+        return $this;
+    }
+
+
 
     /**
      * @return ArrayCollection|NotifiableNotification[]
