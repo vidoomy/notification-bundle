@@ -44,7 +44,7 @@ interface NotificationInterface
     /**
      * @return string Notification excerpt
      */
-    public function getExcerpt(): string;
+    public function getExcerpt(): ?string;
 
     /**
      * @param string $excerpt Notification excerpt
@@ -56,7 +56,7 @@ interface NotificationInterface
     /**
      * @return string Notification message
      */
-    public function getMessage(): string;
+    public function getMessage(): ?string;
 
     /**
      * @param string $message Notification message
@@ -68,7 +68,7 @@ interface NotificationInterface
     /**
      * @return string Link to redirect the user
      */
-    public function getLink():string;
+    public function getLink(): ?string;
 
     /**
      * @param string $link Link to redirect the user
@@ -80,7 +80,7 @@ interface NotificationInterface
     /**
      * @return int Notification priority
      */
-    public function getPriority():int;
+    public function getPriority(): ?int;
 
     /**
      * @param int $priority Notification priority

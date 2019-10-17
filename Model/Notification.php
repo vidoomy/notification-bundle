@@ -151,11 +151,20 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     }
 
     /**
+     * @param bool $generateIfEmpty
      * @return string
      */
-    public function getExcerpt(): string
+    public function getExcerpt($generateIfEmpty = true): ?string
     {
-        return $this->excerpt;
+        if (!is_null($this->excerpt)) {
+            return $this->excerpt;
+        } else {
+            if ($generateIfEmpty) {
+                return $this->generateExcerptFromMessage();
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -171,7 +180,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     /**
      * @return string
      */
-    public function getMessage(): string
+    public function getMessage(): ?string
     {
         return $this->message;
     }
@@ -190,7 +199,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     /**
      * @return string
      */
-    public function getLink(): string
+    public function getLink(): ?string
     {
         return $this->link;
     }
@@ -209,7 +218,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     /**
      * @return int
      */
-    public function getPriority(): int
+    public function getPriority(): ?int
     {
         return $this->priority;
     }
@@ -223,8 +232,6 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         $this->priority = $priority;
         return $this;
     }
-
-
 
     /**
      * @return ArrayCollection|NotifiableNotification[]
@@ -284,6 +291,50 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     public function __toString(): string
     {
         return $this->getSubject() . ' - ' . $this->getMessage();
+    }
+
+    /**
+     * @param int $excerptLength
+     * @param bool $extractFirstParagraph
+     * @return string
+     */
+    public function generateExcerptFromMessage(int $excerptLength = 250, bool $extractFirstParagraph = true): string
+    {
+        if ($extractFirstParagraph || $this->isHTML()) {
+            return $this->extractParagraph();
+        } else {
+            $charAtPosition = "";
+            $messageLength = strlen($this->message);
+
+            do {
+                $excerptLength++;
+                $charAtPosition = substr($this->message, $excerptLength, 1);
+            } while ($excerptLength < $messageLength && $charAtPosition !== " ");
+
+            return substr($this->message, 0, $excerptLength) . "...";
+        }
+    }
+
+    /**
+     * @return string
+     */
+    private function extractParagraph(): string
+    {
+        $string = $this->message;
+
+        if (!is_null($string)) {
+            return substr($string, strpos($string, "<p"), strpos($string, "</p>") + 4);
+        }
+
+        return null;
+    }
+
+    /**
+     * @return bool
+     */
+    private function isHTML(): bool
+    {
+        return $this->message != strip_tags($this->message) ? true : false;
     }
 
     /**
