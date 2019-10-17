@@ -36,6 +36,21 @@ class NotificationController extends AbstractController
     }
 
     /**
+     * @Route("/{notifiable}/all", name="notification_all", methods={"GET"})
+     * @param NotifiableInterface $notifiable
+     * @return JsonResponse
+     */
+    public function allAction(NotifiableInterface $notifiable): JsonResponse
+    {
+        $notifiableRepo = $this->get('doctrine.orm.entity_manager')
+            ->getRepository('VidoomyNotificationBundle:NotifiableNotification');
+        $notificationList = $notifiableRepo->findAllForNotifiableId($notifiable);
+
+        return new JsonResponse(["status" => "success", "data" => $notificationList]);
+
+    }
+
+    /**
      * Set a Notification as seen
      *
      * @Route("/{notifiable}/mark_as_seen/{notification}", name="notification_mark_as_seen", methods={"POST"})

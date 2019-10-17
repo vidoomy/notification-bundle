@@ -23,6 +23,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     const ENTITY_FIELD_ID = "id";
     const ENTITY_FIELD_DATE = "date";
     const ENTITY_FIELD_SUBJECT = "subject";
+    const ENTITY_FIELD_EXCERPT = "excerpt";
     const ENTITY_FIELD_MESSAGE = "message";
     const ENTITY_FIELD_LINK = "link";
     const ENTITY_FIELD_HUMAN_DATE = "humanDate";
@@ -51,6 +52,13 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
      * @ORM\Column(type="string", length=4000)
      */
     protected $subject;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", length=4000, nullable=true)
+     */
+    protected $excerpt;
+
     /**
      * @var string
      * @ORM\Column(type="string", length=4000, nullable=true)
@@ -132,7 +140,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     }
 
     /**
-     * @param string $subject
+     * @param string|null $subject
      * @return $this
      */
     public function setSubject(?string $subject): NotificationInterface
@@ -143,9 +151,36 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     }
 
     /**
+     * @param bool $generateIfEmpty
      * @return string
      */
-    public function getMessage(): string
+    public function getExcerpt($generateIfEmpty = true): ?string
+    {
+        if (!is_null($this->excerpt)) {
+            return $this->excerpt;
+        } else {
+            if ($generateIfEmpty) {
+                return $this->generateExcerptFromMessage();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param string|null $excerpt
+     * @return NotificationInterface
+     */
+    public function setExcerpt(?string $excerpt): NotificationInterface
+    {
+        $this->excerpt = $excerpt;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMessage(): ?string
     {
         return $this->message;
     }
@@ -164,7 +199,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     /**
      * @return string
      */
-    public function getLink(): string
+    public function getLink(): ?string
     {
         return $this->link;
     }
@@ -183,7 +218,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     /**
      * @return int
      */
-    public function getPriority(): int
+    public function getPriority(): ?int
     {
         return $this->priority;
     }
@@ -197,8 +232,6 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         $this->priority = $priority;
         return $this;
     }
-
-
 
     /**
      * @return ArrayCollection|NotifiableNotification[]
@@ -243,7 +276,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         foreach ($this->getNotifiableNotifications() as $notifiableNotification) {
             if (
                 $notifiableNotification->getNotification()->getId() === $this->getId() &&
-                $notifiableNotification->getNotifiableEntity()->getId() === $notifiable->getId()
+                (int) $notifiableNotification->getNotifiableEntity()->getIdentifier() === (int) $notifiable->getId()
             ) {
                 return true;
             }
@@ -261,6 +294,50 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     }
 
     /**
+     * @param int $excerptLength
+     * @param bool $extractFirstParagraph
+     * @return string
+     */
+    public function generateExcerptFromMessage(int $excerptLength = 250, bool $extractFirstParagraph = true): string
+    {
+        if ($extractFirstParagraph || $this->isHTML()) {
+            return $this->extractParagraph();
+        } else {
+            $charAtPosition = "";
+            $messageLength = strlen($this->message);
+
+            do {
+                $excerptLength++;
+                $charAtPosition = substr($this->message, $excerptLength, 1);
+            } while ($excerptLength < $messageLength && $charAtPosition !== " ");
+
+            return substr($this->message, 0, $excerptLength) . "...";
+        }
+    }
+
+    /**
+     * @return string
+     */
+    private function extractParagraph(): string
+    {
+        $string = $this->message;
+
+        if (!is_null($string)) {
+            return substr($string, strpos($string, "<p"), strpos($string, "</p>") + 4);
+        }
+
+        return null;
+    }
+
+    /**
+     * @return bool
+     */
+    private function isHTML(): bool
+    {
+        return $this->message != strip_tags($this->message) ? true : false;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function jsonSerialize(): array
@@ -270,6 +347,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
             self::ENTITY_FIELD_DATE         => $this->getDate()->format(\DateTime::ISO8601),
             self::ENTITY_FIELD_HUMAN_DATE   => $this->getHumanDate(),
             self::ENTITY_FIELD_SUBJECT      => $this->getSubject(),
+            self::ENTITY_FIELD_EXCERPT      => $this->getExcerpt(),
             self::ENTITY_FIELD_MESSAGE      => $this->getMessage(),
             self::ENTITY_FIELD_LINK         => $this->getLink()
         ];
