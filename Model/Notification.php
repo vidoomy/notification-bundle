@@ -78,6 +78,12 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     protected $priority = self::NOTIFICATION_PRIORITY_LOW;
 
     /**
+     * @var array
+     * @ORM\Column(type="json_array", nullable=true)
+     */
+    protected $tags;
+
+    /**
      * @var NotifiableNotification[]|ArrayCollection
      * @ORM\OneToMany(targetEntity="Vidoomy\NotificationBundle\Entity\NotifiableNotification", mappedBy="notification", cascade={"persist"})
      */
@@ -230,6 +236,37 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     public function setPriority(int $priority): NotificationInterface
     {
         $this->priority = $priority;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getTags(): array
+    {
+        return $this->tags;
+    }
+
+    /**
+     * @param array $tags
+     * @return NotificationInterface
+     */
+    public function setTags(array $tags): NotificationInterface
+    {
+        $this->tags = $tags;
+        return $this;
+    }
+
+    /**
+     * @param string $tag
+     * @return NotificationInterface
+     */
+    public function addTag(string $tag): NotificationInterface
+    {
+        if (!in_array($tag, $this->tags)) {
+            $this->tags[] = $tag;
+        }
+
         return $this;
     }
 

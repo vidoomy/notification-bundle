@@ -114,7 +114,8 @@ class NotifiableNotificationRepository extends EntityRepository
             ->join('nn.notifiableEntity', 'ne')
             ->where('ne.identifier = :identifier')
             ->andWhere('ne.class = :class')
-            ->orderBy('n.id', $order)
+            ->orderBy('n.date', $order)
+            ->addOrderBy('n.priority', 'ASC')
             ->setParameter('identifier', $identifier)
             ->setParameter('class', $class);
     }

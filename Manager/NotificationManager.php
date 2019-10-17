@@ -368,6 +368,7 @@ class NotificationManager
      * @param string|null $message
      * @param string|null $link
      * @param int $priority
+     * @param array $tags
      * @return Notification
      */
     public function createNotification(
@@ -375,7 +376,8 @@ class NotificationManager
         string $excerpt = null,
         string $message = null,
         string $link = null,
-        int $priority = NotificationModel::NOTIFICATION_PRIORITY_LOW
+        int $priority = NotificationModel::NOTIFICATION_PRIORITY_LOW,
+        array $tags = []
     ): Notification {
         $notification = new Notification();
         $notification
@@ -383,7 +385,8 @@ class NotificationManager
             ->setExcerpt($excerpt)
             ->setMessage($message)
             ->setLink($link)
-            ->setPriority($priority);
+            ->setPriority($priority)
+            ->setTags($tags);
 
         $event = new CreatedNotificationEvent($notification);
         $this->dispatcher->dispatch($event);
@@ -710,6 +713,27 @@ class NotificationManager
         bool $flush = false
     ): NotificationInterface {
         $notification->setPriority($priority);
+        $this->flush($flush);
+
+        $event = new ModifiedNotificationEvent($notification);
+        $this->dispatcher->dispatch($event);
+
+        return $notification;
+    }
+
+    /**
+     * @param NotificationInterface $notification
+     * @param array       $tags
+     * @param bool         $flush
+     *
+     * @return NotificationInterface
+     */
+    public function setTags(
+        NotificationInterface $notification,
+        array $tags,
+        bool $flush = false
+    ): NotificationInterface {
+        $notification->setTags($tags);
         $this->flush($flush);
 
         $event = new ModifiedNotificationEvent($notification);
