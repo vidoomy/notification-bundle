@@ -295,24 +295,39 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
 
     /**
      * @param int $excerptLength
-     * @param bool $extractFirstParagraph
      * @return string
      */
-    public function generateExcerptFromMessage(int $excerptLength = 250, bool $extractFirstParagraph = true): string
+    public function generateExcerptFromMessage(int $excerptLength = 100): string
     {
-        if ($extractFirstParagraph || $this->isHTML()) {
-            return $this->extractParagraph();
+        if ($this->isHTML()) {
+            $excerpt = $this->extractParagraph();
+            if (strlen($excerpt) <= $excerptLength) {
+                return $excerpt;
+            } else {
+                return $this->adjustExcerpt($excerpt, $excerptLength);
+            }
         } else {
-            $charAtPosition = "";
-            $messageLength = strlen($this->message);
-
-            do {
-                $excerptLength++;
-                $charAtPosition = substr($this->message, $excerptLength, 1);
-            } while ($excerptLength < $messageLength && $charAtPosition !== " ");
-
-            return substr($this->message, 0, $excerptLength) . "...";
+            return $this->adjustExcerpt($this->message, $excerptLength);
         }
+    }
+
+    /**
+     * @param string $excerpt
+     * @param int $excerptLength
+     * @return string
+     */
+    private function adjustExcerpt(string $excerpt, int $excerptLength = 100): string
+    {
+        $charAtPosition = "";
+        $messageLength = strlen($excerpt);
+
+        do {
+            $excerptLength++;
+            $charAtPosition = substr($excerpt, $excerptLength, 1);
+        } while ($excerptLength < $messageLength && $charAtPosition !== " ");
+
+        return substr($this->message, 0, $excerptLength) . "...";
+
     }
 
     /**
