@@ -90,6 +90,17 @@ interface NotificationInterface
     public function setPriority(int $priority): NotificationInterface;
 
     /**
+     * @return array
+     */
+    public function getTags(): array;
+
+    /**
+     * @param array $tags
+     * @return NotificationInterface
+     */
+    public function setTags(array $tags): NotificationInterface;
+
+    /**
      * @return ArrayCollection|NotifiableNotification[]
      */
     public function getNotifiableNotifications();
