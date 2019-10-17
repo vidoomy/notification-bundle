@@ -23,6 +23,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     const ENTITY_FIELD_ID = "id";
     const ENTITY_FIELD_DATE = "date";
     const ENTITY_FIELD_SUBJECT = "subject";
+    const ENTITY_FIELD_EXCERPT = "excerpt";
     const ENTITY_FIELD_MESSAGE = "message";
     const ENTITY_FIELD_LINK = "link";
     const ENTITY_FIELD_HUMAN_DATE = "humanDate";
@@ -51,6 +52,13 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
      * @ORM\Column(type="string", length=4000)
      */
     protected $subject;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", length=4000, nullable=true)
+     */
+    protected $excerpt;
+
     /**
      * @var string
      * @ORM\Column(type="string", length=4000, nullable=true)
@@ -132,13 +140,31 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     }
 
     /**
-     * @param string $subject
+     * @param string|null $subject
      * @return $this
      */
     public function setSubject(?string $subject): NotificationInterface
     {
         $this->subject = $subject;
 
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getExcerpt(): string
+    {
+        return $this->excerpt;
+    }
+
+    /**
+     * @param string|null $excerpt
+     * @return NotificationInterface
+     */
+    public function setExcerpt(?string $excerpt): NotificationInterface
+    {
+        $this->excerpt = $excerpt;
         return $this;
     }
 
@@ -243,7 +269,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         foreach ($this->getNotifiableNotifications() as $notifiableNotification) {
             if (
                 $notifiableNotification->getNotification()->getId() === $this->getId() &&
-                $notifiableNotification->getNotifiableEntity()->getId() === $notifiable->getId()
+                (int) $notifiableNotification->getNotifiableEntity()->getIdentifier() === (int) $notifiable->getId()
             ) {
                 return true;
             }
@@ -270,6 +296,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
             self::ENTITY_FIELD_DATE         => $this->getDate()->format(\DateTime::ISO8601),
             self::ENTITY_FIELD_HUMAN_DATE   => $this->getHumanDate(),
             self::ENTITY_FIELD_SUBJECT      => $this->getSubject(),
+            self::ENTITY_FIELD_EXCERPT      => $this->getExcerpt(),
             self::ENTITY_FIELD_MESSAGE      => $this->getMessage(),
             self::ENTITY_FIELD_LINK         => $this->getLink()
         ];

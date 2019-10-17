@@ -364,6 +364,7 @@ class NotificationManager
 
     /**
      * @param string $subject
+     * @param string|null $excerpt
      * @param string|null $message
      * @param string|null $link
      * @param int $priority
@@ -371,6 +372,7 @@ class NotificationManager
      */
     public function createNotification(
         string $subject,
+        string $excerpt = null,
         string $message = null,
         string $link = null,
         int $priority = NotificationModel::NOTIFICATION_PRIORITY_LOW
@@ -378,6 +380,7 @@ class NotificationManager
         $notification = new Notification();
         $notification
             ->setSubject($subject)
+            ->setExcerpt($excerpt)
             ->setMessage($message)
             ->setLink($link)
             ->setPriority($priority);
@@ -625,6 +628,26 @@ class NotificationManager
         bool $flush = false
     ): NotificationInterface {
         $notification->setSubject($subject);
+        $this->flush($flush);
+
+        $event = new ModifiedNotificationEvent($notification);
+        $this->dispatcher->dispatch($event);
+
+        return $notification;
+    }
+
+    /**
+     * @param NotificationInterface $notification
+     * @param string $excerpt
+     * @param bool $flush
+     * @return NotificationInterface
+     */
+    public function setExcerpt(
+        NotificationInterface $notification,
+        string $excerpt,
+        bool $flush = false
+    ): NotificationInterface {
+        $notification->setExcerpt($excerpt);
         $this->flush($flush);
 
         $event = new ModifiedNotificationEvent($notification);

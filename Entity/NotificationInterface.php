@@ -42,6 +42,18 @@ interface NotificationInterface
     public function setSubject(string $subject): NotificationInterface;
 
     /**
+     * @return string Notification excerpt
+     */
+    public function getExcerpt(): string;
+
+    /**
+     * @param string $excerpt Notification excerpt
+     *
+     * @return NotificationInterface
+     */
+    public function setExcerpt(string $excerpt): NotificationInterface;
+
+    /**
      * @return string Notification message
      */
     public function getMessage(): string;
