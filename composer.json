@@ -19,12 +19,12 @@
   "require" : {
     "php": "^8.0",
     "symfony/framework-bundle": "^5.4",
-    "symfony/orm-pack": "^2.3",
+    "symfony/orm-pack": "^1.0",
     "symfony/translation": "^5.4",
     "symfony/security-bundle": "^5.4",
     "twig/twig": "*",
-    "doctrine/annotations": "^1.14",
-    "nesbot/carbon": "^2.66"
+    "doctrine/annotations": "^1.8",
+    "nesbot/carbon": "^2.23"
   },
   "autoload" : {
     "psr-4": { "Vidoomy\\NotificationBundle\\": "" }
