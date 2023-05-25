@@ -23,7 +23,7 @@
     "symfony/translation": "^5.4",
     "symfony/security-bundle": "^5.4",
     "twig/twig": "*",
-    "doctrine/annotations": "^2.0",
+    "doctrine/annotations": "^1.14",
     "nesbot/carbon": "^2.66"
   },
   "autoload" : {
