@@ -79,7 +79,7 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
 
     /**
      * @var array
-     * @ORM\Column(type="json_array", nullable=true)
+     * @ORM\Column(type="json", nullable=true)
      */
     protected $tags;
 

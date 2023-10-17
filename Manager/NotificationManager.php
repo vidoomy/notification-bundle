@@ -81,9 +81,9 @@ class NotificationManager
         $this->discovery = $discovery;
         $this->em = $container->get('doctrine.orm.entity_manager');
         $this->dispatcher = $container->get('event_dispatcher');
-        $this->notifiableRepository = $this->em->getRepository('VidoomyNotificationBundle:NotifiableEntity');
-        $this->notificationRepository = $this->em->getRepository('VidoomyNotificationBundle:Notification');
-        $this->notifiableNotificationRepository = $this->em->getRepository('VidoomyNotificationBundle:NotifiableNotification');
+        $this->notifiableRepository = $this->em->getRepository(NotifiableEntity::class);
+        $this->notificationRepository = $this->em->getRepository(Notification::class);
+        $this->notifiableNotificationRepository = $this->em->getRepository(NotifiableNotification::class);
     }
 
     /**
@@ -428,7 +428,7 @@ class NotificationManager
      */
     public function removeNotification(array $notifiables, NotificationInterface $notification, bool $flush = false)
     {
-        $repo = $this->em->getRepository('VidoomyNotificationBundle:NotifiableNotification');
+        $repo = $this->em->getRepository(NotifiableNotification::class);
         foreach ($notifiables as $notifiable) {
             $repo->createQueryBuilder('nn')
                 ->delete()

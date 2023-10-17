@@ -8,6 +8,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Vidoomy\NotificationBundle\Entity\NotifiableNotification;
 
 /**
  * Class NotificationController
@@ -27,7 +28,7 @@ class NotificationController extends AbstractController
     public function listAction(NotifiableInterface $notifiable): Response
     {
         $notifiableRepo = $this->get('doctrine.orm.entity_manager')
-            ->getRepository('VidoomyNotificationBundle:NotifiableNotification');
+            ->getRepository(NotifiableNotification::class);
         $notificationList = $notifiableRepo->findAllForNotifiableId($notifiable);
         return $this->render('@VidoomyNotification/notifications.html.twig', array(
             'notificationList' => $notificationList,
@@ -43,7 +44,7 @@ class NotificationController extends AbstractController
     public function allAction(NotifiableInterface $notifiable): JsonResponse
     {
         $notifiableRepo = $this->get('doctrine.orm.entity_manager')
-            ->getRepository('VidoomyNotificationBundle:NotifiableNotification');
+            ->getRepository(NotifiableNotification::class);
         $notificationList = $notifiableRepo->findAllForNotifiableId($notifiable);
 
         return new JsonResponse(["status" => "success", "data" => $notificationList]);
