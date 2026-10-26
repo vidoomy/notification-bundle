@@ -2,29 +2,16 @@
 
 namespace Vidoomy\NotificationBundle\DependencyInjection;
 
-use Symfony\Component\HttpKernel\DependencyInjection\Extension;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Extension\Extension;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
-/**
- * Class VidoomyNotificationExtension
- * Load configuration for the service
- * @package Vidoomy\NotificationBundle\DependencyInjection
- */
 class VidoomyNotificationExtension extends Extension
 {
-    /**
-     * @param array $configs
-     * @param ContainerBuilder $container
-     * @throws \Exception
-     */
-    public function load(array $configs, ContainerBuilder $container)
+    public function load(array $configs, ContainerBuilder $container): void
     {
-        $yamlLoader = new YamlFileLoader(
-            $container,
-            new FileLocator(__DIR__.'/../Resources/config')
-        );
-        $yamlLoader->load('services.yml');
+        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+        $loader->load('services.yml');
     }
 }

@@ -1,3 +1,5 @@
+# Symfony 6.4+: import the controller directory with type "attribute".
+# On Symfony 5.4 use type "annotation", which reads attributes too.
 notifications:
     resource: "@VidoomyNotificationBundle/Controller/"
-    type: annotation
+    type: attribute

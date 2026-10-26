@@ -7,7 +7,7 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 /**
  * VidoomyNotificationBundle
  *
- * A simple Symfony 3 bundle for user notifications
+ * A simple Symfony bundle for user notifications
  *
  * @author    Maximilien Gilet <maximilien248@gmail.com>
  * @author    Diego Rin Martín <diego.rin@vidoomy.com>

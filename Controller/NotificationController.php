@@ -2,182 +2,142 @@
 
 namespace Vidoomy\NotificationBundle\Controller;
 
-use Vidoomy\NotificationBundle\Entity\Notification;
-use Vidoomy\NotificationBundle\NotifiableInterface;
-use Symfony\Component\Routing\Annotation\Route;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityNotFoundException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Routing\Attribute\Route;
+use Vidoomy\NotificationBundle\Entity\Notification;
 use Vidoomy\NotificationBundle\Entity\NotifiableNotification;
+use Vidoomy\NotificationBundle\Entity\Repository\NotifiableNotificationRepository;
+use Vidoomy\NotificationBundle\Manager\NotificationManager;
+use Vidoomy\NotificationBundle\NotifiableInterface;
 
 /**
- * Class NotificationController
- * the base controller for notifications
+ * Base controller for notifications. {notifiable} is the NotifiableEntity id and
+ * {notification} the Notification id; both are resolved here, without a param converter.
  */
 class NotificationController extends AbstractController
 {
+    public function __construct(
+        private NotificationManager $manager,
+        private EntityManagerInterface $em
+    ) {
+    }
 
-    /**
-     * List of all notifications
-     *
-     * @Route("/{notifiable}", name="notification_list", methods={"GET"})
-     * @param NotifiableInterface $notifiable
-     *
-     * @return Response
-     */
-    public function listAction(NotifiableInterface $notifiable): Response
+    #[Route('/{notifiable}', name: 'notification_list', methods: ['GET'], requirements: ['notifiable' => '\d+'])]
+    public function listAction(int $notifiable): Response
     {
-        $notifiableRepo = $this->get('doctrine.orm.entity_manager')
-            ->getRepository(NotifiableNotification::class);
-        $notificationList = $notifiableRepo->findAllForNotifiableId($notifiable);
-        return $this->render('@VidoomyNotification/notifications.html.twig', array(
+        $notificationList = $this->notifiableNotificationRepository()->findAllForNotifiableId($notifiable);
+
+        return $this->render('@VidoomyNotification/notifications.html.twig', [
             'notificationList' => $notificationList,
-            'notifiableNotifications' => $notificationList // deprecated: alias for backward compatibility only
-        ));
+            'notifiableNotifications' => $notificationList, // deprecated: alias for backward compatibility only
+        ]);
     }
 
-    /**
-     * @Route("/{notifiable}/all", name="notification_all", methods={"GET"})
-     * @param NotifiableInterface $notifiable
-     * @return JsonResponse
-     */
-    public function allAction(NotifiableInterface $notifiable): JsonResponse
+    #[Route('/{notifiable}/all', name: 'notification_all', methods: ['GET'], requirements: ['notifiable' => '\d+'])]
+    public function allAction(int $notifiable): JsonResponse
     {
-        $notifiableRepo = $this->get('doctrine.orm.entity_manager')
-            ->getRepository(NotifiableNotification::class);
-        $notificationList = $notifiableRepo->findAllForNotifiableId($notifiable);
+        $notificationList = $this->notifiableNotificationRepository()->findAllForNotifiableId($notifiable);
 
-        return new JsonResponse(["status" => "success", "data" => $notificationList]);
-
+        return new JsonResponse(['status' => 'success', 'data' => $notificationList]);
     }
 
-    /**
-     * Set a Notification as seen
-     *
-     * @Route("/{notifiable}/mark_as_seen/{notification}", name="notification_mark_as_seen", methods={"POST"})
-     * @param int           $notifiable
-     * @param Notification  $notification
-     *
-     * @return JsonResponse
-     * @throws \RuntimeException
-     * @throws \InvalidArgumentException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     * @throws \Doctrine\ORM\EntityNotFoundException
-     * @throws \LogicException
-     */
-    public function markAsSeenAction(int $notifiable, Notification $notification): JsonResponse
+    #[Route('/{notifiable}/mark_as_seen/{notification}', name: 'notification_mark_as_seen', methods: ['POST'], requirements: ['notifiable' => '\d+', 'notification' => '\d+'])]
+    public function markAsSeenAction(int $notifiable, int $notification): JsonResponse
     {
-        $manager = $this->get('vidoomy.notification');
-        $notifiableEntity = $manager->getNotifiableInterface($manager->getNotifiableEntityById($notifiable));
+        $notificationEntity = $this->notification($notification);
+        $notifiableEntity = $this->notifiable($notifiable);
 
-        if ($notification->isOwnedBy($notifiableEntity)) {
-            $manager->markAsSeen(
-                $notifiableEntity,
-                $notification,
-                true
-            );
+        if ($notificationEntity->isOwnedBy($notifiableEntity)) {
+            $this->manager->markAsSeen($notifiableEntity, $notificationEntity, true);
 
-            return new JsonResponse(["status" => "success"]);
+            return new JsonResponse(['status' => 'success']);
         }
 
-        return new JsonResponse(
-            ["status" => "error", "message" => "Unauthorized to perform action"],
-            Response::HTTP_UNAUTHORIZED
-        );
+        return $this->unauthorized();
     }
 
-    /**
-     * Delete a notification
-     *
-     * @Route("/{notifiable}/delete/{notification}", name="notification_delete", methods={"POST"})
-     * @param int           $notifiable
-     * @param Notification  $notification
-     *
-     * @return JsonResponse
-     * @throws \RuntimeException
-     * @throws \InvalidArgumentException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     * @throws \Doctrine\ORM\EntityNotFoundException
-     * @throws \LogicException
-     */
-    public function deleteAction(int $notifiable, Notification $notification): JsonResponse
+    #[Route('/{notifiable}/delete/{notification}', name: 'notification_delete', methods: ['POST'], requirements: ['notifiable' => '\d+', 'notification' => '\d+'])]
+    public function deleteAction(int $notifiable, int $notification): JsonResponse
     {
-        $manager = $this->get('vidoomy.notification');
-        $notifiableEntity = $manager->getNotifiableInterface($manager->getNotifiableEntityById($notifiable));
+        $notificationEntity = $this->notification($notification);
+        $notifiableEntity = $this->notifiable($notifiable);
 
-        if ($notification->isOwnedBy($notifiableEntity)) {
-            $manager->deleteNotification(
-                $notification,
-                true
-            );
+        if ($notificationEntity->isOwnedBy($notifiableEntity)) {
+            $this->manager->deleteNotification($notificationEntity, true);
 
-            return new JsonResponse(["status" => "success"]);
-
+            return new JsonResponse(['status' => 'success']);
         }
 
-        return new JsonResponse(
-            ["status" => "error", "message" => "Unauthorized to perform action"],
-            Response::HTTP_UNAUTHORIZED
-        );
+        return $this->unauthorized();
     }
 
-    /**
-     * Set a Notification as unseen
-     *
-     * @Route("/{notifiable}/mark_as_unseen/{notification}", name="notification_mark_as_unseen", methods={"POST"})
-     * @param int $notifiable
-     * @param Notification $notification
-     *
-     * @return JsonResponse
-     * @throws \RuntimeException
-     * @throws \InvalidArgumentException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     * @throws \Doctrine\ORM\EntityNotFoundException
-     * @throws \LogicException
-     */
-    public function markAsUnSeenAction(int $notifiable, Notification $notification): JsonResponse
+    #[Route('/{notifiable}/mark_as_unseen/{notification}', name: 'notification_mark_as_unseen', methods: ['POST'], requirements: ['notifiable' => '\d+', 'notification' => '\d+'])]
+    public function markAsUnSeenAction(int $notifiable, int $notification): JsonResponse
     {
-        $manager = $this->get('vidoomy.notification');
-        $notifiableEntity = $manager->getNotifiableInterface($manager->getNotifiableEntityById($notifiable));
+        $notificationEntity = $this->notification($notification);
+        $notifiableEntity = $this->notifiable($notifiable);
 
-        if ($notification->isOwnedBy($notifiableEntity)) {
-            $manager->markAsUnseen(
-                $notifiableEntity,
-                $notification,
-                true
-            );
+        if ($notificationEntity->isOwnedBy($notifiableEntity)) {
+            $this->manager->markAsUnseen($notifiableEntity, $notificationEntity, true);
 
-            return new JsonResponse(["status" => "success"]);
+            return new JsonResponse(['status' => 'success']);
         }
 
-        return new JsonResponse(
-            ["status" => "error", "message" => "Unauthorized to perform action"],
-            Response::HTTP_UNAUTHORIZED
-        );
+        return $this->unauthorized();
+    }
+
+    #[Route('/{notifiable}/markAllAsSeen', name: 'notification_mark_all_as_seen', methods: ['POST'], requirements: ['notifiable' => '\d+'])]
+    public function markAllAsSeenAction(int $notifiable): JsonResponse
+    {
+        $this->manager->markAllAsSeen($this->notifiable($notifiable), true);
+
+        return new JsonResponse(['status' => 'success']);
     }
 
     /**
-     * Set all Notifications for a User as seen
-     *
-     * @Route("/{notifiable}/markAllAsSeen", name="notification_mark_all_as_seen", methods={"POST"})
-     * @param int $notifiable
-     *
-     * @return JsonResponse
-     * @throws \RuntimeException
-     * @throws \InvalidArgumentException
-     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws NotFoundHttpException when the id is unknown (what a param converter would have answered)
      */
-    public function markAllAsSeenAction(int $notifiable)
+    private function notification(int $id): Notification
     {
-        $manager = $this->get('vidoomy.notification');
-        $manager->markAllAsSeen(
-            $manager->getNotifiableInterface($manager->getNotifiableEntityById($notifiable)),
-            true
-        );
+        try {
+            return $this->manager->getNotification($id);
+        } catch (EntityNotFoundException $e) {
+            throw new NotFoundHttpException($e->getMessage(), $e);
+        }
+    }
 
-        return new JsonResponse(["status" => "success"]);
+    /**
+     * @throws NotFoundHttpException when the NotifiableEntity id is unknown or no longer maps to an entity
+     */
+    private function notifiable(int $id): NotifiableInterface
+    {
+        try {
+            $notifiable = $this->manager->getNotifiableInterface($this->manager->getNotifiableEntityById($id));
+        } catch (EntityNotFoundException $e) {
+            throw new NotFoundHttpException($e->getMessage(), $e);
+        }
+        if (null === $notifiable) {
+            throw new NotFoundHttpException(sprintf('Notifiable %d not found', $id));
+        }
+
+        return $notifiable;
+    }
+
+    private function notifiableNotificationRepository(): NotifiableNotificationRepository
+    {
+        return $this->em->getRepository(NotifiableNotification::class);
+    }
+
+    private function unauthorized(): JsonResponse
+    {
+        return new JsonResponse(
+            ['status' => 'error', 'message' => 'Unauthorized to perform action'],
+            Response::HTTP_UNAUTHORIZED
+        );
     }
 }

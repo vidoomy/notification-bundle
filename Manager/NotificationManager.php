@@ -6,8 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityNotFoundException;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\NoResultException;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Vidoomy\NotificationBundle\Entity\NotifiableEntity;
 use Vidoomy\NotificationBundle\Entity\NotifiableNotification;
 use Vidoomy\NotificationBundle\Entity\Notification;
@@ -15,7 +14,6 @@ use Vidoomy\NotificationBundle\Entity\NotificationInterface;
 use Vidoomy\NotificationBundle\Entity\Repository\NotifiableNotificationRepository;
 use Vidoomy\NotificationBundle\Entity\Repository\NotifiableRepository;
 use Vidoomy\NotificationBundle\Entity\Repository\NotificationRepository;
-use Vidoomy\NotificationBundle\Event\AbstractNotificationEvent;
 use Vidoomy\NotificationBundle\Event\AssignedNotificationEvent;
 use Vidoomy\NotificationBundle\Event\CreatedNotificationEvent;
 use Vidoomy\NotificationBundle\Event\DeletedNotificationEvent;
@@ -23,67 +21,27 @@ use Vidoomy\NotificationBundle\Event\ModifiedNotificationEvent;
 use Vidoomy\NotificationBundle\Event\RemovedNotificationEvent;
 use Vidoomy\NotificationBundle\Event\SeenNotificationEvent;
 use Vidoomy\NotificationBundle\Event\UnseenNotificationEvent;
-use Vidoomy\NotificationBundle\VidoomyNotificationEvents;
+use Vidoomy\NotificationBundle\Model\Notification as NotificationModel;
 use Vidoomy\NotificationBundle\NotifiableDiscovery;
 use Vidoomy\NotificationBundle\NotifiableInterface;
-use Vidoomy\NotificationBundle\Model\Notification as NotificationModel;
 
 /**
- * Class NotificationManager
- * Manager for notifications
- * @package Vidoomy\NotificationBundle\Manager
+ * Manager for notifications.
  */
 class NotificationManager
 {
-    /**
-     * @var ContainerInterface $container
-     */
-    protected $container;
+    protected NotifiableRepository $notifiableRepository;
+    protected NotificationRepository $notificationRepository;
+    protected NotifiableNotificationRepository $notifiableNotificationRepository;
 
-    /**
-     * @var NotifiableDiscovery $discovery
-     */
-    protected $discovery;
-
-    /**
-     * @var EntityManagerInterface $em
-     */
-    protected $em;
-
-    /**
-     * @var EventDispatcherInterface $dispatcher
-     */
-    protected $dispatcher;
-
-    /**
-     * @var NotifiableRepository $notifiableRepository
-     */
-    protected $notifiableRepository;
-
-    /**
-     * @var NotificationRepository $notificationRepository
-     */
-    protected $notificationRepository;
-
-    /**
-     * @var NotifiableNotificationRepository $notifiableNotificationRepository
-     */
-    protected $notifiableNotificationRepository;
-
-    /**
-     * NotificationManager constructor.
-     * @param ContainerInterface $container
-     * @param NotifiableDiscovery $discovery
-     */
-    public function __construct(ContainerInterface $container, NotifiableDiscovery $discovery)
-    {
-        $this->container = $container;
-        $this->discovery = $discovery;
-        $this->em = $container->get('doctrine.orm.entity_manager');
-        $this->dispatcher = $container->get('event_dispatcher');
-        $this->notifiableRepository = $this->em->getRepository(NotifiableEntity::class);
-        $this->notificationRepository = $this->em->getRepository(Notification::class);
-        $this->notifiableNotificationRepository = $this->em->getRepository(NotifiableNotification::class);
+    public function __construct(
+        protected EntityManagerInterface $em,
+        protected EventDispatcherInterface $dispatcher,
+        protected NotifiableDiscovery $discovery
+    ) {
+        $this->notifiableRepository = $em->getRepository(NotifiableEntity::class);
+        $this->notificationRepository = $em->getRepository(Notification::class);
+        $this->notifiableNotificationRepository = $em->getRepository(NotifiableNotification::class);
     }
 
     /**
@@ -92,7 +50,7 @@ class NotificationManager
      * @return array
      * @throws \InvalidArgumentException
      */
-    public function getDiscoveryNotifiables()
+    public function getDiscoveryNotifiables(): array
     {
         return $this->discovery->getNotifiables();
     }
@@ -216,7 +174,7 @@ class NotificationManager
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
      */
-    public function getNotifiableInterface(NotifiableEntity $notifiableEntity): NotifiableInterface
+    public function getNotifiableInterface(NotifiableEntity $notifiableEntity): ?NotifiableInterface
     {
         return $this->notifiableRepository->findNotifiableInterface(
             $notifiableEntity,
@@ -231,7 +189,12 @@ class NotificationManager
      */
     public function getNotifiableEntityById(int $id): NotifiableEntity
     {
-        return $this->notifiableRepository->findOneById($id);
+        $entity = $this->notifiableRepository->find($id);
+        if (null === $entity) {
+            throw new EntityNotFoundException(sprintf('NotifiableEntity %d not found', $id));
+        }
+
+        return $entity;
     }
 
     /**
@@ -241,7 +204,7 @@ class NotificationManager
      * @throws NonUniqueResultException
      * @throws \ReflectionException
      */
-    private function getNotifiableNotification(NotifiableInterface $notifiable, NotificationInterface $notification): NotifiableNotification
+    private function getNotifiableNotification(NotifiableInterface $notifiable, NotificationInterface $notification): ?NotifiableNotification
     {
         return $this->notifiableNotificationRepository->findOne(
             $notification->getId(),
@@ -254,7 +217,7 @@ class NotificationManager
      *
      * @param $flush
      */
-    private function flush($flush)
+    private function flush(bool $flush): void
     {
         if ($flush) {
             $this->em->flush();
@@ -268,7 +231,7 @@ class NotificationManager
      *
      * @return Notification[]
      */
-    public function getAll($order = 'DESC'): array
+    public function getAll(string $order = 'DESC'): array
     {
         return $this->notificationRepository
             ->createQueryBuilder('n')
@@ -288,9 +251,9 @@ class NotificationManager
     public function getNotifications(
         NotifiableInterface $notifiable,
         string $order = 'DESC',
-        int $limit = null,
-        int $offset = null
-    ) {
+        ?int $limit = null,
+        ?int $offset = null
+    ): array {
         return $this->notifiableNotificationRepository->findAllByNotifiable(
             $this->generateIdentifier($notifiable),
             $this->em->getClassMetadata(get_class($notifiable))->getName(),
@@ -312,9 +275,9 @@ class NotificationManager
     public function getUnseenNotifications(
         NotifiableInterface $notifiable,
         string $order = 'DESC',
-        int $limit = null,
-        int $offset = null
-    ) {
+        ?int $limit = null,
+        ?int $offset = null
+    ): array {
         return $this->notifiableNotificationRepository->findAllByNotifiable(
             $this->generateIdentifier($notifiable),
             $this->em->getClassMetadata(get_class($notifiable))->getName(),
@@ -336,9 +299,9 @@ class NotificationManager
     public function getSeenNotifications(
         NotifiableInterface $notifiable,
         string $order = 'DESC',
-        int $limit = null,
-        int $offset = null
-    ) {
+        ?int $limit = null,
+        ?int $offset = null
+    ): array {
         return $this->notifiableNotificationRepository->findAllByNotifiable(
             $this->generateIdentifier($notifiable),
             $this->em->getClassMetadata(get_class($notifiable))->getName(),
@@ -359,7 +322,12 @@ class NotificationManager
      */
     public function getNotification(int $id): Notification
     {
-        return $this->notificationRepository->findOneById($id);
+        $notification = $this->notificationRepository->find($id);
+        if (null === $notification) {
+            throw new EntityNotFoundException(sprintf('Notification %d not found', $id));
+        }
+
+        return $notification;
     }
 
     /**
@@ -373,9 +341,9 @@ class NotificationManager
      */
     public function createNotification(
         string $subject,
-        string $excerpt = null,
-        string $message = null,
-        string $link = null,
+        ?string $excerpt = null,
+        ?string $message = null,
+        ?string $link = null,
         int $priority = NotificationModel::NOTIFICATION_PRIORITY_LOW,
         array $tags = []
     ): Notification {
@@ -426,7 +394,7 @@ class NotificationManager
      * @param bool $flush
      * @throws \ReflectionException
      */
-    public function removeNotification(array $notifiables, NotificationInterface $notification, bool $flush = false)
+    public function removeNotification(array $notifiables, NotificationInterface $notification, bool $flush = false): void
     {
         $repo = $this->em->getRepository(NotifiableNotification::class);
         foreach ($notifiables as $notifiable) {
@@ -450,7 +418,7 @@ class NotificationManager
      * @param NotificationInterface $notification
      * @param bool $flush
      */
-    public function deleteNotification(NotificationInterface $notification, bool $flush = false)
+    public function deleteNotification(NotificationInterface $notification, bool $flush = false): void
     {
         $this->em->remove($notification);
         $this->flush($flush);
@@ -471,7 +439,7 @@ class NotificationManager
         NotifiableInterface $notifiable,
         NotificationInterface $notification,
         bool $flush = false
-    ) {
+    ): void {
         $nn = $this->getNotifiableNotification($notifiable, $notification);
         if ($nn) {
             $nn->setSeen(true);
@@ -497,7 +465,7 @@ class NotificationManager
         NotifiableInterface $notifiable,
         NotificationInterface $notification,
         bool $flush = false
-    ) {
+    ): void {
         $nn = $this->getNotifiableNotification($notifiable, $notification);
 
         if ($nn) {
@@ -517,7 +485,7 @@ class NotificationManager
      * @param bool $flush
      * @throws \ReflectionException
      */
-    public function markAllAsSeen(NotifiableInterface $notifiable, bool $flush = false)
+    public function markAllAsSeen(NotifiableInterface $notifiable, bool $flush = false): void
     {
         $nns = $this->notifiableNotificationRepository->findAllForNotifiable(
             $this->generateIdentifier($notifiable),

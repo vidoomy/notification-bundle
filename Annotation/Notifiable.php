@@ -2,40 +2,15 @@
 
 namespace Vidoomy\NotificationBundle\Annotation;
 
-use Doctrine\Common\Annotations\Annotation;
+use Vidoomy\NotificationBundle\Attribute\Notifiable as NotifiableAttribute;
 
 /**
- * Class Notifiable
- * @package Vidoomy\NotificationBundle\Annotation
+ * Kept so that code importing the 1.x class name keeps working as a PHP attribute.
+ * The docblock form (@Notifiable) is no longer read: use #[Notifiable(name: '...')].
  *
- * @Annotation
- * @Annotation\Target("CLASS")
+ * @deprecated since 2.0, use {@see NotifiableAttribute} instead.
  */
-class Notifiable
+#[\Attribute(\Attribute::TARGET_CLASS)]
+class Notifiable extends NotifiableAttribute
 {
-    /**
-     * @Required()
-     * @var string
-     */
-    public $name;
-
-    /**
-     * @return string
-     */
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    /**
-     * @param mixed $name
-     *
-     * @return Notifiable
-     */
-    public function setName($name): self
-    {
-        $this->name = $name;
-
-        return $this;
-    }
 }
