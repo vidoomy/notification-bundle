@@ -1,37 +1,59 @@
 {
-  "name" : "vidoomy/notification-bundle",
+  "name": "vidoomy/notification-bundle",
   "license": "MIT",
-  "description" : "A simple Symfony 5 bundle for user notifications",
-  "type" : "symfony-bundle",
-  "authors" : [
+  "description": "A simple Symfony bundle for user notifications",
+  "type": "symfony-bundle",
+  "authors": [
     {
-      "name" : "Maximilien Gilet",
-      "email" : "maximilien248@gmail.com"
+      "name": "Maximilien Gilet",
+      "email": "maximilien248@gmail.com"
     },
     {
       "name": "Diego Rin Martín",
       "email": "diego.rin@vidoomy.com"
     }
   ],
-  "keywords" : [
+  "keywords": [
     "symfony notification bundle simple"
   ],
-  "require" : {
-    "php": "^8.0",
-    "symfony/framework-bundle": "^5.4",
-    "symfony/orm-pack": "^1.0",
-    "symfony/translation": "^5.4",
-    "symfony/security-bundle": "^5.4",
-    "twig/twig": "*",
-    "doctrine/annotations": "^1.8",
-    "nesbot/carbon": "^2.23"
+  "require": {
+    "php": "^8.1",
+    "doctrine/collections": "^1.6 || ^2.0",
+    "doctrine/doctrine-bundle": "^2.4 || ^3.0",
+    "doctrine/orm": "^2.10 || ^3.0",
+    "nesbot/carbon": "^2.23 || ^3.0",
+    "symfony/config": "^5.4 || ^6.4 || ^7.4",
+    "symfony/dependency-injection": "^5.4 || ^6.4 || ^7.4",
+    "symfony/doctrine-bridge": "^5.4 || ^6.4 || ^7.4",
+    "symfony/event-dispatcher": "^5.4 || ^6.4 || ^7.4",
+    "symfony/framework-bundle": "^5.4 || ^6.4 || ^7.4",
+    "symfony/http-foundation": "^5.4 || ^6.4 || ^7.4",
+    "symfony/http-kernel": "^5.4 || ^6.4 || ^7.4",
+    "symfony/routing": "^5.4 || ^6.4 || ^7.4",
+    "symfony/security-bundle": "^5.4 || ^6.4 || ^7.4",
+    "symfony/security-core": "^5.4 || ^6.4 || ^7.4",
+    "symfony/translation": "^5.4 || ^6.4 || ^7.4",
+    "symfony/twig-bundle": "^5.4 || ^6.4 || ^7.4",
+    "symfony/validator": "^5.4 || ^6.4 || ^7.4",
+    "twig/twig": "^3.0"
   },
-  "autoload" : {
-    "psr-4": { "Vidoomy\\NotificationBundle\\": "" }
+  "conflict": {
+    "doctrine/annotations": "<1.14"
   },
-  "extra" : {
-    "branch-alias" : {
-      "dev-master" : "3.0-dev"
+  "autoload": {
+    "psr-4": {
+      "Vidoomy\\NotificationBundle\\": ""
+    },
+    "exclude-from-classmap": [
+      "/Resources/"
+    ],
+    "files": [
+      "Resources/compat/route-attribute.php"
+    ]
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "2.0-dev"
     }
   }
 }

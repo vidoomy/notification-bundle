@@ -1,19 +1,23 @@
 services:
+    vidoomy.notifiable_discovery:
+        class: Vidoomy\NotificationBundle\NotifiableDiscovery
+        arguments: ['@doctrine.orm.entity_manager']
 
     vidoomy.notification:
         class: Vidoomy\NotificationBundle\Manager\NotificationManager
-        arguments: ["@service_container", '@vidoomy.notifiable_discovery']
+        arguments: ['@doctrine.orm.entity_manager', '@event_dispatcher', '@vidoomy.notifiable_discovery']
         public: true
 
-    vidoomy.notifiable_discovery:
-        class: Vidoomy\NotificationBundle\NotifiableDiscovery
-        arguments: [ '@doctrine.orm.entity_manager', '@annotation_reader']
-        public: false
+    # Lets applications type-hint the manager instead of fetching it from the container.
+    Vidoomy\NotificationBundle\Manager\NotificationManager: '@vidoomy.notification'
 
+    Vidoomy\NotificationBundle\Controller\NotificationController:
+        arguments: ['@vidoomy.notification', '@doctrine.orm.entity_manager']
+        calls:
+            - [setContainer, ['@service_container']]
+        tags: ['controller.service_arguments', 'container.service_subscriber']
 
     vidoomy.twig_extension:
-            class: Vidoomy\NotificationBundle\Twig\NotificationExtension
-            arguments: ['@vidoomy.notification', '@security.token_storage', '@twig', '@router']
-            public: false
-            tags:
-                - { name: twig.extension }
+        class: Vidoomy\NotificationBundle\Twig\NotificationExtension
+        arguments: ['@vidoomy.notification', '@twig', '@router']
+        tags: ['twig.extension']

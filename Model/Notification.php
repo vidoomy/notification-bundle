@@ -3,133 +3,85 @@
 namespace Vidoomy\NotificationBundle\Model;
 
 use Carbon\Carbon;
-use Carbon\Translator;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Vidoomy\NotificationBundle\Entity\NotifiableNotification;
 use Vidoomy\NotificationBundle\Entity\NotificationInterface;
+use Vidoomy\NotificationBundle\Entity\Repository\NotificationRepository;
 use Vidoomy\NotificationBundle\NotifiableInterface;
 
 /**
- * Class Notification
- * Notifications defined in your app must implement this class
- *
- * @ORM\MappedSuperclass(repositoryClass="Vidoomy\NotificationBundle\Entity\Repository\NotificationRepository")
- * @package Vidoomy\NotificationBundle\Model
+ * Notifications defined in your app must extend this class.
  */
+#[ORM\MappedSuperclass(repositoryClass: NotificationRepository::class)]
 abstract class Notification implements \JsonSerializable, NotificationInterface
 {
+    public const ENTITY_FIELD_ID = 'id';
+    public const ENTITY_FIELD_DATE = 'date';
+    public const ENTITY_FIELD_SUBJECT = 'subject';
+    public const ENTITY_FIELD_EXCERPT = 'excerpt';
+    public const ENTITY_FIELD_MESSAGE = 'message';
+    public const ENTITY_FIELD_LINK = 'link';
+    public const ENTITY_FIELD_HUMAN_DATE = 'humanDate';
 
-    const ENTITY_FIELD_ID = "id";
-    const ENTITY_FIELD_DATE = "date";
-    const ENTITY_FIELD_SUBJECT = "subject";
-    const ENTITY_FIELD_EXCERPT = "excerpt";
-    const ENTITY_FIELD_MESSAGE = "message";
-    const ENTITY_FIELD_LINK = "link";
-    const ENTITY_FIELD_HUMAN_DATE = "humanDate";
+    public const NOTIFICATION_PRIORITY_HIGH = 1;
+    public const NOTIFICATION_PRIORITY_MEDIUM = 2;
+    public const NOTIFICATION_PRIORITY_LOW = 3;
 
-    const NOTIFICATION_PRIORITY_HIGH = 1;
-    const NOTIFICATION_PRIORITY_MEDIUM = 2;
-    const NOTIFICATION_PRIORITY_LOW = 3;
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
+    protected ?int $id = null;
 
-    /**
-     * @var integer $id
-     *
-     * @ORM\Column(type="integer")
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     */
-    protected $id;
+    #[ORM\Column(type: 'datetime')]
+    protected \DateTimeInterface $date;
 
-    /**
-     * @var \DateTimeInterface
-     * @ORM\Column(type="datetime")
-     */
-    protected $date;
+    #[ORM\Column(type: 'string', length: 4000)]
+    protected ?string $subject = null;
 
-    /**
-     * @var string
-     * @ORM\Column(type="string", length=4000)
-     */
-    protected $subject;
+    #[ORM\Column(type: 'string', length: 4000, nullable: true)]
+    protected ?string $excerpt = null;
 
-    /**
-     * @var string
-     * @ORM\Column(type="string", length=4000, nullable=true)
-     */
-    protected $excerpt;
+    #[ORM\Column(type: 'string', length: 4000, nullable: true)]
+    protected ?string $message = null;
+
+    #[ORM\Column(type: 'string', length: 4000, nullable: true)]
+    protected ?string $link = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    protected ?int $priority = self::NOTIFICATION_PRIORITY_LOW;
+
+    #[ORM\Column(type: 'json', nullable: true)]
+    protected ?array $tags = null;
 
     /**
-     * @var string
-     * @ORM\Column(type="string", length=4000, nullable=true)
+     * @var Collection<int, NotifiableNotification>
      */
-    protected $message;
+    #[ORM\OneToMany(targetEntity: NotifiableNotification::class, mappedBy: 'notification', cascade: ['persist'])]
+    protected Collection $notifiableNotifications;
 
-    /**
-     * @var string
-     * @ORM\Column(type="string", length=4000, nullable=true)
-     */
-    protected $link;
-
-    /**
-     * @var int
-     * @ORM\Column(type="integer", nullable=true)
-     */
-    protected $priority = self::NOTIFICATION_PRIORITY_LOW;
-
-    /**
-     * @var array
-     * @ORM\Column(type="json", nullable=true)
-     */
-    protected $tags;
-
-    /**
-     * @var NotifiableNotification[]|ArrayCollection
-     * @ORM\OneToMany(targetEntity="Vidoomy\NotificationBundle\Entity\NotifiableNotification", mappedBy="notification", cascade={"persist"})
-     */
-    protected $notifiableNotifications;
-
-    /**
-     * AbstractNotification constructor.
-     */
     public function __construct()
     {
         $this->date = new \DateTime();
         $this->notifiableNotifications = new ArrayCollection();
     }
 
-    /**
-     * @return int Notification Id
-     */
-    public function getId(): int
+    public function getId(): ?int
     {
         return $this->id;
     }
 
-    /**
-     * @return \DateTimeInterface
-     */
     public function getDate(): \DateTimeInterface
     {
         return $this->date;
     }
 
-    /**
-     * @param string $locale
-     * @return string
-     */
-    public function getHumanDate($locale = "en"): string
+    public function getHumanDate(string $locale = 'en'): string
     {
-        $translator = Translator::get($locale);
-        $date = Carbon::instance($this->date);
-
-        return $date->locale($locale)->diffForHumans();
+        return Carbon::instance($this->date)->locale($locale)->diffForHumans();
     }
 
-    /**
-     * @param \DateTimeInterface $date
-     * @return $this
-     */
     public function setDate(\DateTimeInterface $date): NotificationInterface
     {
         $this->date = $date;
@@ -137,18 +89,11 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getSubject(): string
     {
-        return $this->subject;
+        return (string) $this->subject;
     }
 
-    /**
-     * @param string|null $subject
-     * @return $this
-     */
     public function setSubject(?string $subject): NotificationInterface
     {
         $this->subject = $subject;
@@ -156,45 +101,31 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         return $this;
     }
 
-    /**
-     * @param bool $generateIfEmpty
-     * @return string
-     */
-    public function getExcerpt($generateIfEmpty = true): ?string
+    public function getExcerpt(bool $generateIfEmpty = true): ?string
     {
-        if (!is_null($this->excerpt)) {
+        if (null !== $this->excerpt) {
             return $this->excerpt;
-        } else {
-            if ($generateIfEmpty) {
-                return $this->generateExcerptFromMessage();
-            }
+        }
+
+        if ($generateIfEmpty) {
+            return $this->generateExcerptFromMessage();
         }
 
         return null;
     }
 
-    /**
-     * @param string|null $excerpt
-     * @return NotificationInterface
-     */
     public function setExcerpt(?string $excerpt): NotificationInterface
     {
         $this->excerpt = $excerpt;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getMessage(): ?string
     {
         return $this->message;
     }
 
-    /**
-     * @param string $message
-     * @return $this
-     */
     public function setMessage(?string $message): NotificationInterface
     {
         $this->message = $message;
@@ -202,18 +133,11 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getLink(): ?string
     {
         return $this->link;
     }
 
-    /**
-     * @param string $link
-     * @return $this
-     */
     public function setLink(?string $link): NotificationInterface
     {
         $this->link = $link;
@@ -221,49 +145,33 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         return $this;
     }
 
-    /**
-     * @return int
-     */
     public function getPriority(): ?int
     {
         return $this->priority;
     }
 
-    /**
-     * @param int $priority
-     * @return $this
-     */
     public function setPriority(int $priority): NotificationInterface
     {
         $this->priority = $priority;
+
         return $this;
     }
 
-    /**
-     * @return array
-     */
     public function getTags(): array
     {
-        return $this->tags;
+        return $this->tags ?? [];
     }
 
-    /**
-     * @param array $tags
-     * @return NotificationInterface
-     */
     public function setTags(array $tags): NotificationInterface
     {
         $this->tags = $tags;
+
         return $this;
     }
 
-    /**
-     * @param string $tag
-     * @return NotificationInterface
-     */
     public function addTag(string $tag): NotificationInterface
     {
-        if (!in_array($tag, $this->tags)) {
+        if (!in_array($tag, $this->getTags(), true)) {
             $this->tags[] = $tag;
         }
 
@@ -271,18 +179,13 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     }
 
     /**
-     * @return ArrayCollection|NotifiableNotification[]
+     * @return Collection<int, NotifiableNotification>
      */
-    public function getNotifiableNotifications()
+    public function getNotifiableNotifications(): Collection
     {
         return $this->notifiableNotifications;
     }
 
-    /**
-     * @param NotifiableNotification $notifiableNotification
-     *
-     * @return $this
-     */
     public function addNotifiableNotification(NotifiableNotification $notifiableNotification): NotificationInterface
     {
         if (!$this->notifiableNotifications->contains($notifiableNotification)) {
@@ -293,11 +196,6 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         return $this;
     }
 
-    /**
-     * @param NotifiableNotification $notifiableNotification
-     *
-     * @return $this
-     */
     public function removeNotifiableNotification(NotifiableNotification $notifiableNotification): NotificationInterface
     {
         if ($this->notifiableNotifications->contains($notifiableNotification)) {
@@ -312,8 +210,8 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
     {
         foreach ($this->getNotifiableNotifications() as $notifiableNotification) {
             if (
-                $notifiableNotification->getNotification()->getId() === $this->getId() &&
-                (int) $notifiableNotification->getNotifiableEntity()->getIdentifier() === (int) $notifiable->getId()
+                $notifiableNotification->getNotification()?->getId() === $this->getId()
+                && (int) $notifiableNotification->getNotifiableEntity()?->getIdentifier() === (int) $notifiable->getId()
             ) {
                 return true;
             }
@@ -322,86 +220,59 @@ abstract class Notification implements \JsonSerializable, NotificationInterface
         return false;
     }
 
-    /**
-     * @return string
-     */
     public function __toString(): string
     {
         return $this->getSubject() . ' - ' . $this->getMessage();
     }
 
-    /**
-     * @param int $excerptLength
-     * @return string
-     */
     public function generateExcerptFromMessage(int $excerptLength = 100): string
     {
         if ($this->isHTML()) {
             $excerpt = $this->extractParagraph();
             if (strlen($excerpt) <= $excerptLength) {
                 return $excerpt;
-            } else {
-                return $this->adjustExcerpt($excerpt, $excerptLength);
             }
-        } else {
-            return $this->adjustExcerpt($this->message, $excerptLength);
+
+            return $this->adjustExcerpt($excerpt, $excerptLength);
         }
+
+        return $this->adjustExcerpt((string) $this->message, $excerptLength);
     }
 
-    /**
-     * @param string $excerpt
-     * @param int $excerptLength
-     * @return string
-     */
     private function adjustExcerpt(string $excerpt, int $excerptLength = 100): string
     {
-        $charAtPosition = "";
         $messageLength = strlen($excerpt);
 
         do {
             $excerptLength++;
             $charAtPosition = substr($excerpt, $excerptLength, 1);
-        } while ($excerptLength < $messageLength && $charAtPosition !== " ");
+        } while ($excerptLength < $messageLength && ' ' !== $charAtPosition);
 
-        return substr($this->message, 0, $excerptLength) . "...";
-
+        return substr((string) $this->message, 0, $excerptLength) . '...';
     }
 
-    /**
-     * @return string
-     */
     private function extractParagraph(): string
     {
-        $string = $this->message;
+        $string = (string) $this->message;
 
-        if (!is_null($string)) {
-            return substr($string, strpos($string, "<p"), strpos($string, "</p>") + 4);
-        }
-
-        return null;
+        return substr($string, (int) strpos($string, '<p'), (int) strpos($string, '</p>') + 4);
     }
 
-    /**
-     * @return bool
-     */
     private function isHTML(): bool
     {
-        return $this->message != strip_tags($this->message) ? true : false;
+        return $this->message != strip_tags((string) $this->message);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function jsonSerialize(): array
     {
         return [
-            self::ENTITY_FIELD_ID           => $this->getId(),
-            self::ENTITY_FIELD_DATE         => $this->getDate()->format(\DateTime::ISO8601),
-            self::ENTITY_FIELD_HUMAN_DATE   => $this->getHumanDate(),
-            self::ENTITY_FIELD_SUBJECT      => $this->getSubject(),
-            self::ENTITY_FIELD_EXCERPT      => $this->getExcerpt(),
-            self::ENTITY_FIELD_MESSAGE      => $this->getMessage(),
-            self::ENTITY_FIELD_LINK         => $this->getLink()
+            self::ENTITY_FIELD_ID => $this->getId(),
+            self::ENTITY_FIELD_DATE => $this->getDate()->format(\DateTimeInterface::ISO8601),
+            self::ENTITY_FIELD_HUMAN_DATE => $this->getHumanDate(),
+            self::ENTITY_FIELD_SUBJECT => $this->getSubject(),
+            self::ENTITY_FIELD_EXCERPT => $this->getExcerpt(),
+            self::ENTITY_FIELD_MESSAGE => $this->getMessage(),
+            self::ENTITY_FIELD_LINK => $this->getLink(),
         ];
     }
 }

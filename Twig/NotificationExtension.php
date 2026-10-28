@@ -2,92 +2,42 @@
 
 namespace Vidoomy\NotificationBundle\Twig;
 
-use Doctrine\DBAL\Exception\InvalidArgumentException;
+use Symfony\Component\Routing\RouterInterface;
+use Twig\Environment;
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFunction;
 use Vidoomy\NotificationBundle\Entity\NotifiableEntity;
 use Vidoomy\NotificationBundle\Entity\NotificationInterface;
 use Vidoomy\NotificationBundle\Manager\NotificationManager;
 use Vidoomy\NotificationBundle\NotifiableInterface;
-use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Twig\Extension\AbstractExtension;
-use Twig\Environment;
-use Twig\TwigFunction;
 
 /**
- * Twig extension to display notifications
- **/
+ * Twig extension to display notifications.
+ */
 class NotificationExtension extends AbstractExtension
 {
-    /**
-     * @var NotificationManager $notificationManager
-     */
-    protected $notificationManager;
+    private const ROUTES_WITHOUT_NOTIFICATION = ['notification_list', 'notification_all', 'notification_mark_all_as_seen'];
+    private const ROUTES_WITH_NOTIFICATION = ['notification_mark_as_seen', 'notification_mark_as_unseen', 'notification_delete'];
 
-    /**
-     * @var TokenStorageInterface $storage
-     */
-    protected $storage;
-
-    /**
-     * @var Environment $twig
-     */
-    protected $twig;
-
-    /**
-     * @var RouterInterface $router
-     */
-    protected $router;
-
-    /**
-     * NotificationExtension constructor.
-     * @param NotificationManager $notificationManager
-     * @param TokenStorageInterface $storage
-     * @param Environment $twig
-     * @param RouterInterface $router
-     */
     public function __construct(
-        NotificationManager $notificationManager,
-        TokenStorageInterface $storage,
-        Environment $twig,
-        RouterInterface $router
+        protected NotificationManager $notificationManager,
+        protected Environment $twig,
+        protected RouterInterface $router
     ) {
-        $this->notificationManager = $notificationManager;
-        $this->storage = $storage;
-        $this->twig = $twig;
-        $this->router = $router;
     }
 
-    /**
-     * @return TwigFunction[]
-     */
     public function getFunctions(): array
     {
-        return array(
-            new TwigFunction('vidoomy_notification_render', array($this, 'render'), array(
-                'is_safe' => array('html')
-            )),
-            new TwigFunction('vidoomy_notification_count', array($this, 'countNotifications'), array(
-                'is_safe' => array('html')
-            )),
-            new TwigFunction('vidoomy_notification_unseen_count', array($this, 'countUnseenNotifications'), array(
-                'is_safe' => array('html')
-            )),
-            new TwigFunction('vidoomy_notification_generate_path', array($this, 'generatePath'), array(
-                'is_safe' => array('html')
-            ))
-        );
+        return [
+            new TwigFunction('vidoomy_notification_render', [$this, 'render'], ['is_safe' => ['html']]),
+            new TwigFunction('vidoomy_notification_count', [$this, 'countNotifications'], ['is_safe' => ['html']]),
+            new TwigFunction('vidoomy_notification_unseen_count', [$this, 'countUnseenNotifications'], ['is_safe' => ['html']]),
+            new TwigFunction('vidoomy_notification_generate_path', [$this, 'generatePath'], ['is_safe' => ['html']]),
+        ];
     }
 
     /**
-     * Rendering notifications in Twig
-     *
-     * @param NotifiableInterface $notifiable
-     * @param array $options
-     * @return string
-     * @throws \ReflectionException
-     * @throws \Twig\Error\LoaderError
-     * @throws \Twig\Error\RuntimeError
-     * @throws \Twig\Error\SyntaxError
+     * Options: seen (bool, default true: all notifications; false: unseen only), order, limit, offset, template.
      */
     public function render(NotifiableInterface $notifiable, array $options = []): string
     {
@@ -98,22 +48,11 @@ class NotificationExtension extends AbstractExtension
         return $this->renderNotifications($notifiable, $options);
     }
 
-    /**
-     * Render notifications of the notifiable as a list
-     *
-     * @param NotifiableInterface $notifiable
-     * @param array $options
-     * @return string
-     * @throws \ReflectionException
-     * @throws \Twig\Error\LoaderError
-     * @throws \Twig\Error\RuntimeError
-     * @throws \Twig\Error\SyntaxError
-     */
     public function renderNotifications(NotifiableInterface $notifiable, array $options): string
     {
-        $order = array_key_exists('order', $options) ? $options['order'] : null;
-        $limit = array_key_exists('limit', $options) ? $options['limit'] : null;
-        $offset = array_key_exists('offset', $options) ? $options['offset'] : null;
+        $order = $options['order'] ?? 'DESC';
+        $limit = $options['limit'] ?? null;
+        $offset = $options['offset'] ?? null;
 
         if ($options['seen']) {
             $notifications = $this->notificationManager->getNotifications($notifiable, $order, $limit, $offset);
@@ -121,129 +60,45 @@ class NotificationExtension extends AbstractExtension
             $notifications = $this->notificationManager->getUnseenNotifications($notifiable, $order, $limit, $offset);
         }
 
-        // if the template option is set, use custom template
-        $template = array_key_exists('template', $options) ? $options['template'] : '@VidoomyNotification/notification_list.html.twig';
+        $template = $options['template'] ?? '@VidoomyNotification/notification_list.html.twig';
 
-        return $this->twig->render($template,
-            array(
-                'notificationList' => $notifications
-            )
-        );
+        return $this->twig->render($template, ['notificationList' => $notifications]);
     }
 
-    /**
-     * Display the total count of notifications for the notifiable
-     *
-     * @param NotifiableInterface $notifiable
-     * @return int
-     * @throws \Doctrine\ORM\NoResultException
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     * @throws \ReflectionException
-     */
     public function countNotifications(NotifiableInterface $notifiable): int
     {
         return $this->notificationManager->getNotificationCount($notifiable);
     }
 
-    /**
-     * Display the count of unseen notifications for this notifiable
-     *
-     * @param NotifiableInterface $notifiable
-     * @return int
-     * @throws \Doctrine\ORM\NoResultException
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     * @throws \ReflectionException
-     */
     public function countUnseenNotifications(NotifiableInterface $notifiable): int
     {
         return $this->notificationManager->getUnseenNotificationCount($notifiable);
     }
 
     /**
-     * Returns the path to the NotificationController action
-     *
-     * @param $route
-     * @param $notifiable
-     * @param NotificationInterface|null $notification
-     * @return \InvalidArgumentException|string
-     * @throws InvalidArgumentException
-     * @throws \ReflectionException
+     * Path to a NotificationController action for a notifiable (entity or NotifiableEntity row).
      */
-    public function generatePath($route, $notifiable, NotificationInterface $notification = null)
+    public function generatePath(string $route, NotifiableInterface|NotifiableEntity $notifiable, ?NotificationInterface $notification = null): string
     {
-        if ($notifiable instanceof NotifiableInterface) {
-            $notifiableId = $this->notificationManager->getNotifiableEntity($notifiable)->getId();
-        } elseif ($notifiable instanceof NotifiableEntity) {
-            $notifiableId = $notifiable->getId();
-        } else {
-            throw new InvalidArgumentException('You must provide a NotifiableInterface or NotifiableEntity object');
+        $notifiableId = $notifiable instanceof NotifiableInterface
+            ? $this->notificationManager->getNotifiableEntity($notifiable)->getId()
+            : $notifiable->getId();
+
+        if (in_array($route, self::ROUTES_WITHOUT_NOTIFICATION, true)) {
+            return $this->router->generate($route, ['notifiable' => $notifiableId]);
         }
 
-        switch ($route) {
-            case 'notification_list':
-                return $this->router->generate(
-                    'notification_list',
-                    array('notifiable' => $notifiableId)
-                );
-                break;
-            case 'notification_all':
-                return $this->router->generate(
-                    'notification_all',
-                    array('notifiable' => $notifiableId)
-                );
-                break;
-            case 'notification_mark_as_seen':
-                if (!$notification) {
-                    throw new \InvalidArgumentException('You must provide a Notification Entity');
-                }
+        if (in_array($route, self::ROUTES_WITH_NOTIFICATION, true)) {
+            if (null === $notification) {
+                throw new \InvalidArgumentException('You must provide a Notification Entity');
+            }
 
-                return $this->router->generate(
-                    'notification_mark_as_seen',
-                    array(
-                        'notifiable' => $notifiableId,
-                        'notification' => $notification->getId()
-                    )
-                );
-                break;
-            case 'notification_mark_as_unseen':
-                if (!$notification) {
-                    throw new \InvalidArgumentException('You must provide a Notification Entity');
-                }
-
-                return $this->router->generate(
-                    'notification_mark_as_unseen',
-                    array(
-                        'notifiable' => $notifiableId,
-                        'notification' => $notification->getId()
-                    )
-                );
-                break;
-            case 'notification_delete':
-                if (!$notification) {
-                    throw new \InvalidArgumentException('You must provide a Notification Entity');
-                }
-
-                return $this->router->generate(
-                    'notification_delete',
-                    array(
-                        'notifiable' => $notifiableId,
-                        'notification' => $notification->getId()
-                    )
-                );
-                break;
-            case 'notification_mark_all_as_seen':
-                return $this->router->generate('notification_mark_all_as_seen', array('notifiable' => $notifiableId));
-                break;
-            default:
-                return new \InvalidArgumentException('You must provide a valid route path. Paths availables : notification_list, notification_mark_as_seen, notification_mark_as_unseen, notification_mark_all_as_seen');
+            return $this->router->generate($route, ['notifiable' => $notifiableId, 'notification' => $notification->getId()]);
         }
-    }
 
-    /**
-     * @return string
-     */
-    public function getName()
-    {
-        return 'vidoomy_notification';
+        throw new \InvalidArgumentException(sprintf(
+            'You must provide a valid route path. Paths available: %s',
+            implode(', ', array_merge(self::ROUTES_WITHOUT_NOTIFICATION, self::ROUTES_WITH_NOTIFICATION))
+        ));
     }
 }

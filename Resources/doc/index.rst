@@ -54,7 +54,7 @@ Configure notifiables classes:
 
 The goal of this bundle is to make one or many entities ``notifiables``.
 
-1. Use the ``@Notifiable`` annotation on your entity
+1. Add the ``#[Notifiable]`` attribute on your entity
 2. Implement the ``Vidoomy\NotificationBundle\NotifiableInterface`` interface (it's an empty interface)
 
 And that's it !
@@ -64,19 +64,17 @@ Example:
 .. code-block:: php
 
     <?php
-    // src/AppBundle/Entity/MyEntity.php
+    // src/Entity/MyEntity.php
 
-    namespace AppBundle\Entity;
+    namespace App\Entity;
 
-    ...
-    use Vidoomy\NotificationBundle\Annotation\Notifiable;
+    use Doctrine\ORM\Mapping as ORM;
+    use Vidoomy\NotificationBundle\Attribute\Notifiable;
     use Vidoomy\NotificationBundle\NotifiableInterface;
 
-    /**
-     * @ORM\Entity
-     * @ORM\Table(name="my_entity")
-     * @Notifiable(name="my_entity")
-     */
+    #[ORM\Entity]
+    #[ORM\Table(name: 'my_entity')]
+    #[Notifiable(name: 'my_entity')]
     class MyEntity implements NotifiableInterface
     {
         ...

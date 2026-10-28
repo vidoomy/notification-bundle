@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: maximilien
- * Date: 12/10/17
- * Time: 09:24
- */
 
 namespace Vidoomy\NotificationBundle\Entity\Repository;
 
@@ -23,7 +17,7 @@ class NotifiableNotificationRepository extends EntityRepository
      * @return NotifiableNotification|null
      * @throws \Doctrine\ORM\NonUniqueResultException
      */
-    public function findOne(int $notificationId, NotifiableEntity $notifiable): NotifiableNotification
+    public function findOne(int $notificationId, NotifiableEntity $notifiable): ?NotifiableNotification
     {
         return $this->createQueryBuilder('nn')
             ->join('nn.notification', 'n')
@@ -46,7 +40,7 @@ class NotifiableNotificationRepository extends EntityRepository
      *
      * @return NotifiableNotification[]
      */
-    public function findAllForNotifiable(string $identifier, string $class, $order = 'DESC'): array
+    public function findAllForNotifiable(string $identifier, string $class, string $order = 'DESC'): array
     {
         return $this->createQueryBuilder('nn')
             ->join('nn.notifiableEntity', 'ne')
@@ -74,11 +68,11 @@ class NotifiableNotificationRepository extends EntityRepository
     public function findAllByNotifiable(
         string $identifier,
         string $class,
-        bool $seen = null,
+        ?bool $seen = null,
         string $order = 'DESC',
-        int $limit = null,
-        int $offset = null
-    ) {
+        ?int $limit = null,
+        ?int $offset = null
+    ): array {
         $qb = $this->findAllByNotifiableQb($identifier, $class, $order);
 
         if ($seen !== null) {
@@ -106,7 +100,7 @@ class NotifiableNotificationRepository extends EntityRepository
      *
      * @return QueryBuilder
      */
-    public function findAllByNotifiableQb(string $identifier, string $class, string $order = 'DESC')
+    public function findAllByNotifiableQb(string $identifier, string $class, string $order = 'DESC'): QueryBuilder
     {
         return $this->createQueryBuilder('nn')
             ->addSelect('n')
@@ -157,7 +151,7 @@ class NotifiableNotificationRepository extends EntityRepository
      *
      * @return QueryBuilder
      */
-    protected function getNotificationCountQb(string $identifier, string $class)
+    protected function getNotificationCountQb(string $identifier, string $class): QueryBuilder
     {
         return $this->createQueryBuilder('nn')
             ->select('COUNT(nn.id)')
@@ -185,7 +179,7 @@ class NotifiableNotificationRepository extends EntityRepository
      * @throws \Doctrine\ORM\NonUniqueResultException
      * @throws \Doctrine\ORM\NoResultException
      */
-    public function getNotificationCount(string $identifier, string $class, $seen = null): int
+    public function getNotificationCount(string $identifier, string $class, ?bool $seen = null): int
     {
         $qb = $this->getNotificationCountQb($identifier, $class);
 
@@ -195,6 +189,6 @@ class NotifiableNotificationRepository extends EntityRepository
                 ->andWhere('nn.seen = :seen')
                 ->setParameter('seen', $whereSeen);
         }
-        return $qb->getQuery()->getSingleScalarResult();
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 }

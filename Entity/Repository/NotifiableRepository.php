@@ -37,7 +37,7 @@ class NotifiableRepository extends EntityRepository
      * @param bool|null $seen
      * @return array
      */
-    public function findAllByNotification(NotificationInterface $notification, bool $seen = null): array
+    public function findAllByNotification(NotificationInterface $notification, ?bool $seen = null): array
     {
         $qb = $this
             ->createQueryBuilder('notifiable')

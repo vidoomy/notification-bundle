@@ -18,13 +18,15 @@ An easy yet powerful notification bundle for Symfony 4
 
 Create and manage notifications in an efficient way.
 
-Symfony support :
-  * 3.x
-  * 4.x
+Symfony support (2.x of this bundle):
+  * 5.4
+  * 6.4
+  * 7.4
 
-## NOW SUPPORTS SYMFONY FLEX !
-
-Version 3.0 out now.
+PHP 8.1 or newer. Mapping and routes use PHP attributes; `doctrine/annotations` is no longer
+required. Mark notifiable entities with `#[Notifiable(name: '...')]`
+(`Vidoomy\NotificationBundle\Attribute\Notifiable`); the `@Notifiable` docblock annotation of
+1.x is not read any more.
 
 ## Features
 
